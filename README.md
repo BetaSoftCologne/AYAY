@@ -38,6 +38,9 @@ Generalize the instrument table editor the be usable for sequence editing as wel
 tr0001:
 Finish the track editor
 
+tr0002:
+Fix track overlapping. Track 01 reaches into track 02 because the editor does always show 64 rows (independent of the actual row size - which is another issue..) so looking at row 32 of track 01 is looking at row 0 of track 02 and modifiying any of both tampers the adjacent track.
+
 == Instruments ==
 
 ins0001:
