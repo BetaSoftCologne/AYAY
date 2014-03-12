@@ -26,7 +26,7 @@ INSTR_SIZE          equ 4 + META_SIZE
 WAVETBL_COL         equ 2
 INSTR_PARAMS        equ 5
 TRACK_COL_MAX       equ 2
-TRACK_ROW_MAX       equ 64
+TRACK_ROW_MAX       equ 32
 TRACK_ROWS_DISP     equ 9
 VOICE_SIZE          equ 32 * 3 ; 32 rows a 3 bytes
 
@@ -2432,15 +2432,18 @@ track_scroll_up:
 ; jump up
 track_jump_up:
     ld a,(track_offset)
-    cp 8 ; TODO
-    ret c
-    sub 8
+    sub TRACK_ROWS_DISP
+    jr nc,track_jump_up2
+    xor a
+track_jump_up2:
     ld (track_offset),a
     jp track_redraw
 
 ; cursor down
 track_down:
     ld a,(track_row)
+    cp TRACK_ROW_MAX
+    ret nc
     inc a
     cp TRACK_ROWS_DISP
     jr nc,track_scroll_down
@@ -2464,9 +2467,9 @@ track_scroll_down:
 ; jump down
 track_jump_down:
     ld a,(track_offset)
-    cp 64 - 8 ; TODO
+    cp TRACK_ROW_MAX - TRACK_ROWS_DISP ; TODO
     ret nc
-    add 8
+    add TRACK_ROWS_DISP
     ld (track_offset),a
     jp track_redraw
 
@@ -2642,6 +2645,9 @@ track_print:
     ld d,a
     ld b,TRACK_ROWS_DISP
 track_print_offs:
+    ld a,d
+    cp TRACK_ROW_MAX
+    jr nc,track_print_end
     push hl
     call locate
     ld a,d
@@ -2651,6 +2657,7 @@ track_print_offs:
     inc l
     djnz track_print_offs
 
+track_print_end:
     ; voice A
     ld a,0
     call voice_print
