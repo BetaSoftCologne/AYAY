@@ -16,7 +16,7 @@ some collected ideas & notes most of which could be turned into an issue
 
 == SID player ==
 
-sid0001:
+sid0001: DONE!
 When the current SID instrument targets e.g. reg8, the write to reg8 that is part of the AY engine must not also write to reg8, but another (dummy) register, like 14 (or higher.. what happens when writing reg15, 16..?) to avoid
 disrupting the wave form
 
@@ -37,6 +37,12 @@ Generalize the instrument table editor the be usable for sequence editing as wel
 
 tr0001:
 Finish the track editor
+
+tr0002:
+Fix track overlapping. Track 01 reaches into track 02 because the editor does always show 64 rows (independent of the actual row size - which is another issue..) so looking at row 32 of track 01 is looking at row 0 of track 02 and modifiying any of both tampers the adjacent track.
+
+tr0003:
+Each voice should have its own track editor area (like in soundtrakker) so you can jump between tracks/voices. If you jam in any voice, the sound should be heard on the according voice.
 
 == Instruments ==
 
