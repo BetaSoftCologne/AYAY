@@ -146,6 +146,7 @@ init_editor:
     ; select inst 0
     xor a
     call instr_select
+    call draw_waveform
 
      ; enable mem-stats
     ld a,1
@@ -350,7 +351,7 @@ global_funcs:
     db 9 ; TAB
     dw select_mode
 
-    db $05
+    db $05 ; crtl E
     dw init_screen
 
     db $0c ; crtl L
@@ -730,7 +731,7 @@ instr_select:
 ; draw current waveform
 draw_waveform:
     ; has it changed?
-    ld hl,(current_val)
+    ld hl,(instr_current_val)
     ld a,(last_drawed_waveform)
     cp (hl)
     ret z ; no, don't draw again
@@ -778,11 +779,11 @@ draw_now:
     ld (last_drawed_waveform),a
     ld a,b
 
-    ; set pen
+    ; gra set pen
     call $bbde
 
-    ld b,64 ; = 0 => 256 iterations
-    ld de,320
+    ld b,64 ; 
+    ld de,276 ; x-pos 
 draw_loop:
     push bc
     push de
@@ -791,9 +792,8 @@ draw_loop:
     and 15
     push af
 
-    ; gra move absolute
-    ld hl,200
-    call $bbc0
+    ld hl,264 ; y-pos
+    call $bbc0; gra move absolute
 
     ; plot current value
     ld h,0
@@ -803,7 +803,7 @@ draw_loop:
     add a
     add a
     ld l,a
-    call $bbed ; plot relative
+    call $bbed ; gra plot relative
 
     pop hl
     ld de,4
@@ -879,9 +879,9 @@ mode_instr:
     dw instr_enter
 
     db $f8
-    dw inc_value
+    dw instr_inc_value
     db $f9
-    dw dec_value
+    dw instr_dec_value
 
     db 0 ; end of table
 
@@ -1055,7 +1055,7 @@ instr_enter:
     or b
 
     ; store value
-    ld hl,(current_val)
+    ld hl,(instr_current_val)
     ld (hl),a
 
     ; go to next position
@@ -1077,15 +1077,15 @@ instr_done:
 
 
 ; increment current value
-dec_value:
-    ld hl,(current_val)
+instr_dec_value:
+    ld hl,(instr_current_val)
     dec (hl)
     jp instr_done
 
 
 ; decrement current value
-inc_value:
-    ld hl,(current_val)
+instr_inc_value:
+    ld hl,(instr_current_val)
     inc (hl)
     jp instr_done
 
@@ -1167,6 +1167,11 @@ print_instr:
     ld a,(current_inst_offsets+3)
     call print_volume_tbl
 
+    ld hl,$2104
+    call locate
+    call print_local
+    db "- wavetable -", 0
+
     ; finish
     jp instr_done
 
@@ -1202,7 +1207,7 @@ print_offset_tbl:
     push hl
     call locate
     call print_local
-    db "arpegg", 0
+    db "offset", 0
     pop bc
     inc c
     pop af
@@ -1217,7 +1222,7 @@ print_finetune_tbl:
     push hl
     call locate
     call print_local
-    db "finetn", 0
+    db "vibrato", 0
     pop bc
     inc c
     pop af
@@ -1339,7 +1344,7 @@ instr_show_cur_val:
     call get_addr_at_cursor
 
     ; print value
-    ld (current_val),hl
+    ld (instr_current_val),hl
     ld a,(hl)
     cp $80
     jp nz,hex_out
@@ -1445,7 +1450,7 @@ inst_row:
     db 0
 
 ; current value under cursor
-current_val:
+instr_current_val:
     dw 0
 
 
@@ -1683,6 +1688,11 @@ mode_sequence:
     db $f3
     dw seq_right
 
+    db $f8
+    dw seq_inc_value
+    db $f9
+    dw seq_dec_value
+
     ; enter value
     db 13
     dw seq_enter_val
@@ -1808,7 +1818,6 @@ seq_up:
     call seq_hide_cursor
     pop hl
 
-    ; TODO temp!
     dec (hl)
 
     call seq_locate
@@ -1818,12 +1827,13 @@ seq_up:
 seq_down:
     ld hl,(seq_current_pos)
     ld a,(hl)
+    cp 9
+    ret nc
 
     push hl
     call seq_hide_cursor
     pop hl
 
-    ; TODO temp!
     inc (hl)
 
     call seq_locate
@@ -1837,7 +1847,6 @@ seq_left:
 
     call seq_hide_cursor
 
-    ; TODO temp!
     ld hl,seq_active
     dec (hl)
 
@@ -1854,7 +1863,6 @@ seq_right:
 
     call seq_hide_cursor
 
-    ; TODO temp!
     ld hl,seq_active
     inc (hl)
 
@@ -1862,6 +1870,18 @@ seq_right:
     jp seq_draw_cursor
 
     ret
+
+; increment value
+seq_inc_value:
+    ld hl,(seq_current_val)
+    inc (hl)
+    jp seq_draw_cursor
+
+; decrement value
+seq_dec_value:
+    ld hl,(seq_current_val)
+    dec (hl)
+    jp seq_draw_cursor
 
 seq_enter_val:
     ; move cursor before first char
@@ -6049,6 +6069,8 @@ mem_not_available:
     ; we're out of memory :(
     ld hl,0
     ret
+
+
 
 
 ;
